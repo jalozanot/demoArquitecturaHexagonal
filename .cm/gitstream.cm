@@ -1,0 +1,91 @@
+# -*- mode: yaml -*-
+
+manifest:
+  version: 1.0
+
+config:
+  admin:
+    users: [vim-zz]
+
+automations:
+  # Approve changes of text files inside docs dir by maintainers 
+  # Merging is still manual 
+  approve_maintainers_docs:
+    if:
+      - {{ files | match(regex=r/docs\/.*\.(md|txt|png|svg|webp)$/) | every }}
+      - {{ has.img_type1 or has.img_type2 or has.img_type3 }}
+      - {{ pr.author | match(list=maintainers) }}
+    run:
+      - action: approve@v1
+  
+  # Notify maintainers on new PRs
+  notify_maintainers:
+    if:
+      - true
+    run:
+      - action: add-reviewers@v1
+        args:
+          reviewers: {{ maintainers }}
+  
+  # Mark changes to automation rule examples as they need to be tested and working
+  mark_examples:
+    if:
+      - {{ files | match(regex=r/\.(cm)$/) | some }}
+    run:
+      - action: add-label@v1
+        args:
+          label: 'examples-code-changes'
+          color: '#FFEC00'
+
+  # Mark missing screenshot when touching docs dir texts
+  mark_screenshot:
+    if:
+      - {{ files | match(regex=r/docs\/.*\.(md|txt)$/) | some }}
+      - {{ not (has.img_type1 or has.img_type2 or has.img_type3) }}
+    run:
+      - action: add-label@v1
+        args:
+          label: 'no screenshot'
+          color: '#FF000A'
+      - action: add-comment@v1
+        args:
+          comment: |
+            A screenshot of the relevant part of docs after the changes is a life saver 🛟
+
+  # Check for wrong app link 
+  check_wrong_domain:
+    if:
+      - {{ source.diff.files | match(attr='diff', regex=r/git[sS]tream\.com/) | some }}
+    run:
+      - action: add-label@v1
+        args:
+          label: 'wrong link'
+          color: '#FF000A'
+      - action: request-changes@v1
+        args:
+          comment: |
+            You have used `gitstream.com` which is not a valid link, use `gitstream.cm` instead.
+
+  # Check for wrong app link 
+  check_local_links:
+    if:
+      - {{ source.diff.files | match(attr='diff', list=['localhost', '127.0.0.1']) | some }}
+    run:
+      - action: add-label@v1
+        args:
+          label: 'wrong link'
+          color: '#FF000A'
+      - action: request-changes@v1
+        args:
+          comment: |
+            You have used local links, use www instead.
+
+has:
+  img_type1: {{ pr.description | includes(regex=r/!\[.*\]\(.*(jpg|svg|png|gif|psd).*\)/) }}
+  img_type2: {{ pr.description | includes(regex=r/!\[.*\]\((https?:\/\/github.com\/.*)/) }}
+  img_type3: {{ pr.description | includes(regex=r/<img.*src=.*https:\/\/github.com.*>/) }}
+
+
+maintainers:
+  - 'vim-zz'
+  - 'BenLloydPearson'
