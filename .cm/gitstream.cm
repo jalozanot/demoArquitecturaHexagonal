@@ -4,16 +4,26 @@ manifest:
   version: 1.0
 
 automations:
-  approve_dependabot:
+  approve_tiny_change:
+    # Triggered for PRs that contain one file and one line.
     if:
-      - {{ branch.name | includes(term="dependabot") }}
-      - {{ branch.author | includes(term="dependabot") }}
+      - {{ is.one_file and is.one_line }}
     run:
-      - action: approve@v1
       - action: add-label@v1
         args:
-          label: "approved-dependabot"
-      - action: merge@v1
+          label: 'single-line'
+      - action: approve@v1
+      - action: add-comment@v1
         args:
-          wait_for_all_checks: true
-          squash_on_merge: true
+          comment: |
+            This PR has been approved because it is only a single line
+
+changes:
+  # Sum all the lines added in the PR
+  additions: {{ branch.diff.files_metadata | map(attr='additions') | sum }}
+  # Sum all the line removed in the PR
+  deletions: {{ branch.diff.files_metadata | map(attr='deletions') | sum }}
+
+is:
+  one_file: {{ files | length == 1 }}
+  one_line: {{ changes.additions - changes.deletions <= 1 }}
