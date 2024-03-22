@@ -14,7 +14,7 @@ import java.util.Optional;
 @AllArgsConstructor
 @Service
 public class TaskService implements CreateTaskUseCase, RetrieveTaskUseCase, UpdateTaskUseCase, DeleteTaskUserCase, GetAdditionalTaskInfoUseCase {
-
+// prueba merge automatico
     private final CreateTaskUseCase createTaskUseCase;
     private final RetrieveTaskUseCase retrieveTaskUseCase;
     private final UpdateTaskUseCase updateTaskUseCase;
