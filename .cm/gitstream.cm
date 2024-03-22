@@ -17,6 +17,10 @@ automations:
         args:
           comment: |
             This PR has been approved because it is only a single line
+      - action: merge@v1
+              args:
+                wait_for_all_checks: true
+                squash_on_merge: true
 
 changes:
   # Sum all the lines added in the PR
